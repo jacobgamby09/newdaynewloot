@@ -56,8 +56,11 @@ interface GameStore {
   bombsLeft: number;
   /** True while the player is aiming a bomb (targeting mode). */
   arming: boolean;
+  /** True while the camp hub upgrade window is open (opened by clicking the tent). */
+  campOpen: boolean;
   setIntent: (intent: RunIntent) => void;
   setArming: (arming: boolean) => void;
+  setCampOpen: (open: boolean) => void;
   setBombsLeft: (bombsLeft: number) => void;
   setWorkerStamina: (id: number, value: number, max: number) => void;
   setWorkerDone: (id: number) => void;
@@ -85,10 +88,13 @@ export const useGameStore = create<GameStore>()(
       endReason: 'exhausted',
       bombsLeft: 0,
       arming: false,
+      campOpen: false,
 
       setIntent: (intent) => set({ intent }),
 
       setArming: (arming) => set({ arming }),
+
+      setCampOpen: (open) => set({ campOpen: open }),
 
       setBombsLeft: (bombsLeft) => set({ bombsLeft }),
 
@@ -116,6 +122,7 @@ export const useGameStore = create<GameStore>()(
             runLoot: emptyLoot(),
             bombsLeft: loadout.bombCharges,
             arming: false,
+            campOpen: false,
           };
         }),
 
@@ -132,7 +139,9 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      goIdle: () => set({ phase: 'idle' }),
+      // The summary's "Camp" button returns to the camp and opens the hub
+      // directly, since its intent is to manage upgrades.
+      goIdle: () => set({ phase: 'idle', campOpen: true }),
 
       buyUpgrade: (kind) => {
         const s = get();

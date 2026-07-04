@@ -96,7 +96,7 @@ export class MineScene extends Phaser.Scene {
     cam.startFollow(this.followPoint, true, 0.12, 0.12);
     cam.setDeadzone(TILE * 1.5, TILE * 2);
     this.applyZoom();
-    this.scale.on(Phaser.Scale.Events.RESIZE, this.applyZoom, this);
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.onResize, this);
 
     this.reticle = this.add.graphics().setDepth(20).setVisible(false);
     this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onPointerMove, this);
@@ -106,6 +106,11 @@ export class MineScene extends Phaser.Scene {
       if (state.phase === 'running' && prev.phase !== 'running') {
         this.beginRun(state.seed);
       }
+      // Returning to the camp (e.g. from the summary): re-frame on the tent.
+      if (state.phase === 'idle' && prev.phase !== 'idle') {
+        this.running = false;
+        this.focusCamp();
+      }
       if (campLevel(state.upgrades) !== campLevel(prev.upgrades)) {
         this.updateCampHub(true);
       }
@@ -113,7 +118,7 @@ export class MineScene extends Phaser.Scene {
     });
     const cleanup = () => {
       this.unsub?.();
-      this.scale.off(Phaser.Scale.Events.RESIZE, this.applyZoom, this);
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.onResize, this);
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanup);
     this.events.once(Phaser.Scenes.Events.DESTROY, cleanup);
@@ -128,8 +133,15 @@ export class MineScene extends Phaser.Scene {
   }
 
   private applyZoom() {
-    const zoom = Phaser.Math.Clamp(this.scale.width / 420, 2, 3);
-    this.cameras.main.setZoom(zoom);
+    const base = Phaser.Math.Clamp(this.scale.width / 420, 2, 3);
+    // Idle camp view sits a touch closer so the tent dominates and less of
+    // the mine is visible.
+    this.cameras.main.setZoom(this.running ? base : base * 1.35);
+  }
+
+  private onResize() {
+    if (this.running) this.applyZoom();
+    else this.focusCamp();
   }
 
   private createCampHub() {
@@ -148,10 +160,39 @@ export class MineScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     const sprite = this.add.image(0, 0, `camp-hub-${level}`).setOrigin(0.5, 1);
+    // Centered horizontally over the mine board.
+    const centerX = (SIM.grid.width * TILE) / 2;
     const container = this.add
-      .container(TILE * 2.4, SKY_ROWS * TILE - 2, [sprite, sign, label])
+      .container(centerX, SKY_ROWS * TILE - 2, [sprite, sign, label])
       .setDepth(7);
     this.campHub = { container, sprite, label };
+
+    // Click the tent to open the camp hub (only while idle in the camp).
+    sprite.setInteractive({ useHandCursor: true });
+    sprite.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+      if (useGameStore.getState().phase === 'idle') {
+        useGameStore.getState().setCampOpen(true);
+      }
+    });
+    // Gentle idle bob so the tent reads as interactive.
+    this.tweens.add({
+      targets: sprite,
+      y: -3,
+      duration: 1400,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  /** Frame the surface camp (tent + sky) with only a sliver of mine below. */
+  private focusCamp() {
+    const cam = this.cameras.main;
+    cam.stopFollow();
+    this.applyZoom();
+    const x = this.campHub?.container.x ?? (SIM.grid.width * TILE) / 2;
+    // Center high so the sky and tent dominate; bounds clamp the top to 0.
+    cam.centerOn(x, SKY_ROWS * TILE - TILE * 1.5);
   }
 
   private updateCampHub(celebrate = false) {
@@ -236,7 +277,13 @@ export class MineScene extends Phaser.Scene {
       wy(this.sim.workers[0].pos.y),
     );
     this.applyZoom();
-    this.cameras.main.centerOn(this.followPoint.x, this.followPoint.y);
+    if (autoStart) {
+      this.cameras.main.startFollow(this.followPoint, true, 0.12, 0.12);
+      this.cameras.main.centerOn(this.followPoint.x, this.followPoint.y);
+    } else {
+      // Idle: sit up in the camp instead of staring down the shaft.
+      this.focusCamp();
+    }
 
     this.running = autoStart;
   }

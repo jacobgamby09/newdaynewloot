@@ -161,26 +161,25 @@ export function CampScreen() {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 text-white">
       <div className="pointer-events-auto absolute right-3 top-3 bottom-3 flex w-[25rem] max-w-[calc(100vw-1.5rem)] flex-col rounded-xl bg-[#1d1712]/90 p-4 shadow-2xl ring-1 ring-white/10 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-semibold tracking-wide text-amber-300/70 uppercase">
-              Camp Hub Lv {currentCampLevel}
-            </div>
-            <h1 className="text-2xl font-extrabold text-amber-300">
-              {runCount === 0 ? 'New Day New Loot' : UPGRADES.townhall.levels[currentCampLevel - 1].label}
-            </h1>
-            {runCount === 0 && (
-              <p className="mt-1 max-w-72 text-sm text-white/60">
-                Send your miner into the shaft, bring loot home, and grow this camp.
-              </p>
-            )}
+        <button
+          onClick={() => useGameStore.getState().setCampOpen(false)}
+          aria-label="Close camp"
+          className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg bg-white/10 text-sm font-bold text-white/70 transition hover:bg-white/20 hover:text-white"
+        >
+          ✕
+        </button>
+        <div className="pr-8">
+          <div className="text-[11px] font-semibold tracking-wide text-amber-300/70 uppercase">
+            Camp Hub Lv {currentCampLevel}
           </div>
-          <button
-            onClick={start}
-            className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-sm font-black text-black transition hover:bg-amber-400 active:scale-95"
-          >
-            Start Run
-          </button>
+          <h1 className="text-2xl font-extrabold text-amber-300">
+            {runCount === 0 ? 'New Day New Loot' : UPGRADES.townhall.levels[currentCampLevel - 1].label}
+          </h1>
+          {runCount === 0 && (
+            <p className="mt-1 text-sm text-white/60">
+              Send your miner into the shaft, bring loot home, and grow this camp.
+            </p>
+          )}
         </div>
 
         <div className="mt-4">
@@ -221,6 +220,13 @@ export function CampScreen() {
         <div className="mt-3">
           <IntentPicker />
         </div>
+
+        <button
+          onClick={start}
+          className="mt-3 w-full rounded-xl bg-amber-500 py-3 text-lg font-black text-black transition hover:bg-amber-400 active:scale-95"
+        >
+          Start Run
+        </button>
       </div>
     </div>
   );
