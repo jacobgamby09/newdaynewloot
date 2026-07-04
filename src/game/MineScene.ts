@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SIM } from '../sim/config';
 import { RunSim } from '../sim/run';
-import { deriveLoadout } from '../sim/upgrades';
+import { campLevel, deriveLoadout } from '../sim/upgrades';
 import type { Cell, LootDrop, SimEvent, TileType } from '../sim/types';
 import { useGameStore } from '../state/store';
 import { flyLootIcon } from '../ui/lootFly';
@@ -40,6 +40,11 @@ export class MineScene extends Phaser.Scene {
   private followPoint!: Phaser.GameObjects.Rectangle;
   private reticle!: Phaser.GameObjects.Graphics;
   private bombSprites = new Map<string, Phaser.GameObjects.Container>();
+  private campHub?: {
+    container: Phaser.GameObjects.Container;
+    sprite: Phaser.GameObjects.Image;
+    label: Phaser.GameObjects.Text;
+  };
   private unsub?: () => void;
 
   constructor() {
@@ -81,6 +86,8 @@ export class MineScene extends Phaser.Scene {
     bg.fillStyle(0x3e8f2f, 1);
     bg.fillRect(-margin, SKY_ROWS * TILE - 2, worldW + margin * 2, 2);
 
+    this.createCampHub();
+
     // invisible camera focus that tracks the deepest active worker
     this.followPoint = this.add.rectangle(wx(SIM.grid.startX), wy(0), 2, 2, 0x000000, 0);
 
@@ -98,6 +105,9 @@ export class MineScene extends Phaser.Scene {
     this.unsub = useGameStore.subscribe((state, prev) => {
       if (state.phase === 'running' && prev.phase !== 'running') {
         this.beginRun(state.seed);
+      }
+      if (campLevel(state.upgrades) !== campLevel(prev.upgrades)) {
+        this.updateCampHub(true);
       }
       if (!state.arming && prev.arming) this.reticle.setVisible(false);
     });
@@ -120,6 +130,62 @@ export class MineScene extends Phaser.Scene {
   private applyZoom() {
     const zoom = Phaser.Math.Clamp(this.scale.width / 420, 2, 3);
     this.cameras.main.setZoom(zoom);
+  }
+
+  private createCampHub() {
+    const level = Phaser.Math.Clamp(campLevel(useGameStore.getState().upgrades), 1, 5);
+    const sign = this.add.graphics();
+    sign.fillStyle(0x3b2418, 1);
+    sign.fillRoundedRect(-18, -49, 36, 16, 2);
+    sign.lineStyle(1, 0xffd94d, 0.9);
+    sign.strokeRoundedRect(-18, -49, 36, 16, 2);
+    const label = this.add
+      .text(0, -41, `Lv ${level}`, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '9px',
+        fontStyle: '700',
+        color: '#ffd94d',
+      })
+      .setOrigin(0.5);
+    const sprite = this.add.image(0, 0, `camp-hub-${level}`).setOrigin(0.5, 1);
+    const container = this.add
+      .container(TILE * 2.4, SKY_ROWS * TILE - 2, [sprite, sign, label])
+      .setDepth(7);
+    this.campHub = { container, sprite, label };
+  }
+
+  private updateCampHub(celebrate = false) {
+    if (!this.campHub) return;
+    const level = Phaser.Math.Clamp(campLevel(useGameStore.getState().upgrades), 1, 5);
+    this.campHub.sprite.setTexture(`camp-hub-${level}`);
+    this.campHub.label.setText(`Lv ${level}`);
+    if (!celebrate) return;
+    this.tweens.killTweensOf(this.campHub.container);
+    this.campHub.container.setScale(1);
+    this.tweens.add({
+      targets: this.campHub.container,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: 130,
+      yoyo: true,
+      ease: 'Back.easeOut',
+    });
+    this.spawnSurfaceDust(this.campHub.container.x, this.campHub.container.y - 12);
+  }
+
+  private spawnSurfaceDust(x: number, y: number) {
+    const particles = this.add.particles(x, y, 'dust', {
+      speed: { min: 20, max: 90 },
+      angle: { min: 210, max: 330 },
+      lifespan: { min: 220, max: 420 },
+      scale: { start: 0.9, end: 0 },
+      gravityY: 220,
+      tint: 0xd8b27a,
+      emitting: false,
+    });
+    particles.setDepth(12);
+    particles.explode(12);
+    this.time.delayedCall(650, () => particles.destroy());
   }
 
   private beginRun(seed: number, autoStart = true) {

@@ -4,6 +4,7 @@ import {
   DEFAULT_LEVELS,
   canAfford,
   deriveLoadout,
+  isUpgradeUnlocked,
   upgradeCost,
   type UpgradeKind,
   type UpgradeLevels,
@@ -135,6 +136,7 @@ export const useGameStore = create<GameStore>()(
 
       buyUpgrade: (kind) => {
         const s = get();
+        if (!isUpgradeUnlocked(kind, s.upgrades)) return;
         const cost = upgradeCost(kind, s.upgrades[kind]);
         if (!cost || !canAfford(s.totals, cost)) return;
         const totals = { ...s.totals };

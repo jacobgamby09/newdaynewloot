@@ -1,6 +1,11 @@
 import { sfx } from '../game/audio';
 import { RESOURCES, type ResourceType } from '../sim/types';
-import { UPGRADES, canAfford, upgradeCost, type UpgradeKind } from '../sim/upgrades';
+import {
+  UPGRADE_ORDER,
+  canAfford,
+  isUpgradeUnlocked,
+  upgradeCost,
+} from '../sim/upgrades';
 import { useGameStore } from '../state/store';
 import { RESOURCE_LABELS, ResourceIcon } from './icons';
 import { useCountUp } from './useCountUp';
@@ -34,9 +39,9 @@ export function SummaryScreen() {
   const depth = useGameStore((s) => s.depth);
   const upgrades = useGameStore((s) => s.upgrades);
 
-  const upgradeReady = (Object.keys(UPGRADES) as UpgradeKind[]).some((kind) => {
+  const upgradeReady = UPGRADE_ORDER.some((kind) => {
     const cost = upgradeCost(kind, upgrades[kind]);
-    return cost !== null && canAfford(totals, cost);
+    return isUpgradeUnlocked(kind, upgrades) && cost !== null && canAfford(totals, cost);
   });
 
   const again = () => {

@@ -245,6 +245,85 @@ function genBomb(g: Phaser.GameObjects.Graphics) {
   g.generateTexture('spark', 4, 4);
 }
 
+function genCampHub(g: Phaser.GameObjects.Graphics, level: number) {
+  const w = 96;
+  const h = 56;
+  g.clear();
+
+  // ground shadow
+  g.fillStyle(0x23351f, 0.35);
+  g.fillEllipse(w / 2, h - 5, 82, 10);
+
+  // tent body
+  const tent = level >= 4 ? 0xd6b67a : 0xc98748;
+  const tentDark = level >= 4 ? 0x8f7042 : 0x7c4b2b;
+  const trim = level >= 3 ? 0xffd94d : 0x6b2d1f;
+  g.fillStyle(tentDark, 1);
+  g.fillTriangle(12, h - 8, 42, 10, 72, h - 8);
+  g.fillStyle(tent, 1);
+  g.fillTriangle(20, h - 8, 46, 12, 72, h - 8);
+  g.fillStyle(0x3b2418, 1);
+  g.fillTriangle(40, h - 8, 50, 31, 61, h - 8);
+  g.lineStyle(2, trim, 1);
+  g.lineBetween(46, 12, 20, h - 8);
+  g.lineBetween(46, 12, 72, h - 8);
+
+  // rope stakes
+  g.lineStyle(1, 0xdec79a, 1);
+  g.lineBetween(20, h - 8, 7, h - 3);
+  g.lineBetween(72, h - 8, 87, h - 3);
+  g.fillStyle(0x66402a, 1);
+  g.fillRect(6, h - 6, 3, 7);
+  g.fillRect(86, h - 6, 3, 7);
+
+  if (level >= 2) {
+    // crates and workbench
+    g.fillStyle(0x8a5a33, 1);
+    g.fillRect(4, h - 20, 15, 14);
+    g.fillRect(75, h - 18, 14, 12);
+    g.lineStyle(1, 0x5a351f, 1);
+    g.strokeRect(4.5, h - 19.5, 14, 13);
+    g.strokeRect(75.5, h - 17.5, 13, 11);
+  }
+
+  if (level >= 3) {
+    // banner and extra awning
+    g.fillStyle(0x4f7ec9, 1);
+    g.fillRect(51, 7, 3, 19);
+    g.fillStyle(0xffd94d, 1);
+    g.fillTriangle(54, 8, 69, 12, 54, 17);
+    g.fillStyle(0x6b3b28, 1);
+    g.fillRoundedRect(64, h - 24, 22, 18, 2);
+    g.fillStyle(0x9d6134, 1);
+    g.fillRect(65, h - 23, 20, 5);
+  }
+
+  if (level >= 4) {
+    // workshop chimney and forge glow
+    g.fillStyle(0x6f451f, 1);
+    g.fillRect(12, h - 34, 8, 24);
+    g.fillStyle(0x34221a, 1);
+    g.fillRect(10, h - 36, 12, 4);
+    g.fillStyle(0xff8c26, 0.9);
+    g.fillCircle(80, h - 9, 5);
+    g.fillStyle(0xffd94d, 0.9);
+    g.fillCircle(80, h - 9, 2.5);
+  }
+
+  if (level >= 5) {
+    // timber frame roof turns the camp into a tiny outpost
+    g.fillStyle(0x3f2a1d, 1);
+    g.fillRect(24, 13, 45, 4);
+    g.fillRect(24, h - 12, 45, 4);
+    g.fillRect(25, 16, 4, 33);
+    g.fillRect(65, 16, 4, 33);
+    g.lineStyle(2, 0x3f2a1d, 1);
+    g.lineBetween(28, 17, 66, h - 12);
+  }
+
+  g.generateTexture(`camp-hub-${level}`, w, h);
+}
+
 /** Generates every texture the scene needs. Safe to call more than once. */
 export function ensureTextures(scene: Phaser.Scene) {
   if (scene.textures.exists('tile-dirt')) return;
@@ -263,5 +342,6 @@ export function ensureTextures(scene: Phaser.Scene) {
   }
   genPickaxe(g);
   genBomb(g);
+  for (let level = 1; level <= 5; level++) genCampHub(g, level);
   g.destroy();
 }

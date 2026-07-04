@@ -29,6 +29,10 @@ The player should not need to micromanage every action. The intended rhythm is:
 
 The camp is the long-term progression surface. It should visually grow as the player unlocks buildings, workers, automation, tools, and deeper mine access.
 
+The first version of this should be a compact Camp Hub / Townhall system rather than a full base builder. The player starts with a small tent on the grass above the mine. That tent is the home base: it opens the upgrade interface, represents the current camp level, and gradually unlocks more upgrade categories and visible building sites.
+
+The fantasy is that the player is building a small mining operation from almost nothing. Camp growth should provide visual satisfaction without adding heavy management complexity early.
+
 ## Core Loop
 
 1. The day starts and the mine is reset or refreshed.
@@ -152,6 +156,24 @@ For the first playable version, Bomb is the strongest candidate because it is ea
 ## Camp Progression
 
 The camp is the meta-progression hub and should visually improve over time.
+
+Initial camp structure:
+
+- Start with a small tent on the surface above the mine.
+- The tent acts as the Camp Hub / Townhall.
+- Upgrading the Camp Hub changes the tent or central camp visually.
+- Higher Camp Hub levels unlock more upgrade categories and building sites.
+- The current upgrade menu can remain simple at first, but it should feel like it belongs to the camp rather than floating outside the world.
+
+Suggested Camp Hub progression:
+
+- Camp Hub Level 1: basic tent, start run, storage, Blacksmith (tool) and Bunkhouse (stamina) upgrades.
+- Camp Hub Level 2: unlock the Elevator, starting runs deeper in a pre-dug shaft.
+- Camp Hub Level 3: unlock the Notice Board and crew progression.
+- Camp Hub Level 4: unlock the Bomb Satchel and ability progression.
+- Camp Hub Level 5: reserved for advanced mine infrastructure (outpost tier).
+
+The Camp Hub is not intended to be a prestige reset in the near term. Prestige can later use the idea of packing up and moving to a new mine, but the early game should let the player invest in and grow attached to the first camp.
 
 Core buildings:
 

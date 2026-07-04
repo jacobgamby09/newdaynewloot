@@ -20,11 +20,11 @@ interface Scenario {
 }
 
 const SCENARIOS: Scenario[] = [
-  { name: 'baseline (all Lv1)', levels: { blacksmith: 1, bunkhouse: 1, elevator: 1, satchel: 1, crew: 1 } },
-  { name: 'early (smith 2, bunk 2)', levels: { blacksmith: 2, bunkhouse: 2, elevator: 1, satchel: 1, crew: 1 } },
-  { name: 'mid (smith 2, bunk 3, elev 2)', levels: { blacksmith: 2, bunkhouse: 3, elevator: 2, satchel: 1, crew: 1 } },
-  { name: 'mid + crew (2 workers)', levels: { blacksmith: 2, bunkhouse: 3, elevator: 2, satchel: 1, crew: 2 } },
-  { name: 'maxed (3 / 4 / 3 / crew 2)', levels: { blacksmith: 3, bunkhouse: 4, elevator: 3, satchel: 3, crew: 2 } },
+  { name: 'baseline (all Lv1)', levels: { townhall: 1, blacksmith: 1, bunkhouse: 1, elevator: 1, satchel: 1, crew: 1 } },
+  { name: 'early (smith 2, bunk 2)', levels: { townhall: 2, blacksmith: 2, bunkhouse: 2, elevator: 1, satchel: 1, crew: 1 } },
+  { name: 'mid (smith 2, bunk 3, elev 2)', levels: { townhall: 3, blacksmith: 2, bunkhouse: 3, elevator: 2, satchel: 1, crew: 1 } },
+  { name: 'mid + crew (2 workers)', levels: { townhall: 3, blacksmith: 2, bunkhouse: 3, elevator: 2, satchel: 1, crew: 2 } },
+  { name: 'maxed (3 / 4 / 3 / crew 2)', levels: { townhall: 5, blacksmith: 3, bunkhouse: 4, elevator: 3, satchel: 3, crew: 2 } },
 ];
 
 interface RunResult {
@@ -90,6 +90,7 @@ for (const scenario of SCENARIOS) {
 
 console.log('\n#### Intent comparison (early loadout: smith 2, bunk 2) ####');
 const earlyLoadout = deriveLoadout({
+  townhall: 2,
   blacksmith: 2,
   bunkhouse: 2,
   elevator: 1,
@@ -103,6 +104,7 @@ for (const intent of RUN_INTENTS) {
 console.log('\n#### Bomb sanity ####');
 {
   const loadout = deriveLoadout({
+    townhall: 5,
     blacksmith: 1,
     bunkhouse: 1,
     elevator: 1,

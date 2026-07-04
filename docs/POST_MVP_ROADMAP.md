@@ -15,6 +15,44 @@ Guiding principle, inherited from the GDD: add variation and decisions before
 adding volume. Every phase below should make the pre-run choice or the
 mid-run intervention more interesting, not just make numbers bigger.
 
+## Phase 6 - Living Camp / Townhall
+
+The current upgrade screen works, but it is mostly a functional menu. The
+next progression pass should turn the camp into something the player can see
+growing on the surface above the mine.
+
+Start small: one tent acts as the Camp Hub / Townhall. It opens the existing
+upgrade interface, shows the current camp level, and gradually unlocks upgrade
+categories and visible building sites. This gives camp growth a physical
+identity before the game needs a full base-building system.
+
+Implement:
+
+- A small tent / Camp Hub visible on the grass above the mine during idle.
+- Camp Hub level as a new progression track.
+- Visual tent upgrades for Camp Hub levels.
+- Upgrade gating by Camp Hub level (as implemented):
+  - Level 1: basic tent, start run, storage, Blacksmith (tools) and Bunkhouse (stamina).
+  - Level 2: Elevator — start deeper in a pre-dug shaft.
+  - Level 3: Notice Board — crew progression.
+  - Level 4: Bomb Satchel — ability progression.
+  - Level 5: reserved for advanced mine infrastructure (outpost tier).
+- Camp UI opened from the Camp Hub instead of feeling like a detached menu.
+- Small construction payoff on upgrade: sound, quick pop, level badge, or dust.
+
+Success criteria:
+
+- The first screen reads as "my camp above my mine", not only a menu overlay.
+- Upgrades feel tied to physical places in the camp.
+- The player can tell at a glance that the camp has improved over time.
+- The system keeps the early game simple and readable.
+
+Do not implement yet:
+
+- Full base-building placement.
+- Prestige / moving to a new mine.
+- Large camp management systems.
+
 ## Phase 7 - Daily Modifiers ("New Day")
 
 The game is called New Day New Loot, but every day currently plays the same.
@@ -94,7 +132,6 @@ Implement (in this order, each gated on the previous feeling right):
 - Auto-repeat last run setup (crew + intent).
 - Auto-spend on a chosen upgrade track.
 - Offline/away progress (conservative).
-- Prestige hook — e.g. a "new season" reset with permanent perks.
 
 Success criteria:
 
@@ -114,6 +151,6 @@ Success criteria:
 
 ## Deliberately Not Yet
 
-Prestige depth, narrative/quests, procedural biomes, mobile/touch port,
-cart capacity and hauling logistics. Not rejected — parked until the phases
-above answer whether the loop deserves them.
+Prestige / moving to a new mine, narrative/quests, procedural biomes,
+mobile/touch port, cart capacity and hauling logistics. Not rejected — parked
+until the phases above answer whether the loop deserves them.
