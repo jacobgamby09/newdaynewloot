@@ -58,9 +58,14 @@ interface GameStore {
   arming: boolean;
   /** True while the camp hub upgrade window is open (opened by clicking the tent). */
   campOpen: boolean;
+  /** Sound effects muted (persisted). */
+  muted: boolean;
   setIntent: (intent: RunIntent) => void;
   setArming: (arming: boolean) => void;
   setCampOpen: (open: boolean) => void;
+  toggleMuted: () => void;
+  /** Wipes all progress back to a fresh save (for playtests). */
+  resetSave: () => void;
   setBombsLeft: (bombsLeft: number) => void;
   setWorkerStamina: (id: number, value: number, max: number) => void;
   setWorkerDone: (id: number) => void;
@@ -89,12 +94,27 @@ export const useGameStore = create<GameStore>()(
       bombsLeft: 0,
       arming: false,
       campOpen: false,
+      muted: false,
 
       setIntent: (intent) => set({ intent }),
 
       setArming: (arming) => set({ arming }),
 
       setCampOpen: (open) => set({ campOpen: open }),
+
+      toggleMuted: () => set((s) => ({ muted: !s.muted })),
+
+      resetSave: () =>
+        set({
+          totals: emptyLoot(),
+          upgrades: { ...DEFAULT_LEVELS },
+          runCount: 0,
+          intent: 'balanced',
+          workers: rosterWorkers(DEFAULT_LEVELS),
+          depth: 0,
+          runLoot: emptyLoot(),
+          bombsLeft: 0,
+        }),
 
       setBombsLeft: (bombsLeft) => set({ bombsLeft }),
 
@@ -170,6 +190,7 @@ export const useGameStore = create<GameStore>()(
         upgrades: s.upgrades,
         runCount: s.runCount,
         intent: s.intent,
+        muted: s.muted,
       }),
       // Deep-merge the nested records so saves from before a new resource or
       // building was added still load with sane defaults.

@@ -10,9 +10,11 @@ import {
   upgradeCost,
   type UpgradeKind,
 } from '../sim/upgrades';
+import { useState } from 'react';
 import { useGameStore } from '../state/store';
 import { RESOURCE_LABELS, ResourceIcon } from './icons';
 import { INTENT_INFO } from './intents';
+import { SoundToggle } from './SoundToggle';
 
 function CostChips({ cost }: { cost: Partial<LootTotals> }) {
   return (
@@ -161,14 +163,17 @@ export function CampScreen() {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 text-white">
       <div className="pointer-events-auto absolute right-3 top-3 bottom-3 flex w-[25rem] max-w-[calc(100vw-1.5rem)] flex-col rounded-xl bg-[#1d1712]/90 p-4 shadow-2xl ring-1 ring-white/10 backdrop-blur-sm">
-        <button
-          onClick={() => useGameStore.getState().setCampOpen(false)}
-          aria-label="Close camp"
-          className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg bg-white/10 text-sm font-bold text-white/70 transition hover:bg-white/20 hover:text-white"
-        >
-          ✕
-        </button>
-        <div className="pr-8">
+        <div className="absolute right-3 top-3 flex items-center gap-1.5">
+          <SoundToggle />
+          <button
+            onClick={() => useGameStore.getState().setCampOpen(false)}
+            aria-label="Close camp"
+            className="grid size-7 place-items-center rounded-lg bg-white/10 text-sm font-bold text-white/70 transition hover:bg-white/20 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="pr-16">
           <div className="text-[11px] font-semibold tracking-wide text-amber-300/70 uppercase">
             Camp Hub Lv {currentCampLevel}
           </div>
@@ -227,7 +232,37 @@ export function CampScreen() {
         >
           Start Run
         </button>
+
+        <ResetSaveButton />
       </div>
     </div>
+  );
+}
+
+function ResetSaveButton() {
+  const [confirming, setConfirming] = useState(false);
+
+  const click = () => {
+    if (!confirming) {
+      setConfirming(true);
+      // Auto-cancel so a stray click can't linger as an armed reset.
+      setTimeout(() => setConfirming(false), 4000);
+      return;
+    }
+    useGameStore.getState().resetSave();
+    setConfirming(false);
+  };
+
+  return (
+    <button
+      onClick={click}
+      className={`mt-2 w-full rounded-lg py-1.5 text-xs font-semibold transition ${
+        confirming
+          ? 'bg-red-500/20 text-red-300 ring-1 ring-red-400/50'
+          : 'text-white/30 hover:text-white/60'
+      }`}
+    >
+      {confirming ? 'Really wipe all progress? Click again' : 'Reset save'}
+    </button>
   );
 }

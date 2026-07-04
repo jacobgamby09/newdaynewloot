@@ -4,6 +4,7 @@ import type { ResourceType } from '../sim/types';
 import { useGameStore } from '../state/store';
 import { ResourceIcon } from './icons';
 import { INTENT_INFO } from './intents';
+import { SoundToggle } from './SoundToggle';
 
 function BombSlot() {
   const bombsLeft = useGameStore((s) => s.bombsLeft);
@@ -133,6 +134,7 @@ export function HUD() {
         <span className="rounded bg-black/40 px-2 py-1 text-xs font-medium text-white/70">
           {INTENT_INFO[intent].icon} {INTENT_INFO[intent].name}
         </span>
+        <SoundToggle className="pointer-events-auto bg-black/40" />
       </div>
 
       <BombSlot />

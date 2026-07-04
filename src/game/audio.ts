@@ -5,6 +5,11 @@
 class Sfx {
   private ctx: AudioContext | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private muted = false;
+
+  setMuted(muted: boolean) {
+    this.muted = muted;
+  }
 
   unlock() {
     if (!this.ctx) {
@@ -29,7 +34,7 @@ class Sfx {
 
   private noise(freq: number, duration: number, volume: number, type: BiquadFilterType) {
     const ctx = this.ctx;
-    if (!ctx || ctx.state !== 'running') return;
+    if (this.muted || !ctx || ctx.state !== 'running') return;
     const src = ctx.createBufferSource();
     src.buffer = this.getNoise(ctx);
     const filter = ctx.createBiquadFilter();
@@ -52,7 +57,7 @@ class Sfx {
     type: OscillatorType,
   ) {
     const ctx = this.ctx;
-    if (!ctx || ctx.state !== 'running') return;
+    if (this.muted || !ctx || ctx.state !== 'running') return;
     const osc = ctx.createOscillator();
     osc.type = type;
     osc.frequency.setValueAtTime(from, ctx.currentTime);
