@@ -1,4 +1,5 @@
 import { SIM } from './config';
+import { NEUTRAL_DAY, type DayModifier } from './days';
 import { generateGrid } from './grid';
 import { mulberry32 } from './rng';
 import { DEFAULT_LEVELS, deriveLoadout, type Loadout } from './upgrades';
@@ -66,6 +67,7 @@ export class RunSim {
   readonly height = SIM.grid.height;
   readonly loadout: Loadout;
   readonly intent: RunIntent;
+  readonly day: DayModifier;
   readonly workers: ActiveWorker[] = [];
   loot: LootTotals = { stone: 0, copper: 0, iron: 0 };
   bombsLeft: number;
@@ -81,12 +83,14 @@ export class RunSim {
     seed: number,
     loadout: Loadout = deriveLoadout(DEFAULT_LEVELS),
     intent: RunIntent = 'balanced',
+    day: DayModifier = NEUTRAL_DAY,
   ) {
     this.rng = mulberry32(seed);
     this.loadout = loadout;
     this.intent = intent;
+    this.day = day;
     const count = Math.min(loadout.workerCount, WORKER_ROSTER.length);
-    this.grid = generateGrid(seed, loadout.startRow, count);
+    this.grid = generateGrid(seed, loadout.startRow, count, day);
     this.maxDepth = loadout.startRow;
     this.bombsLeft = loadout.bombCharges;
     for (let i = 0; i < count; i++) {
@@ -314,7 +318,7 @@ export class RunSim {
       if (leg.fall) {
         worker.fallStreak += 1;
       } else {
-        this.spend(worker, SIM.worker.moveStaminaPerTile);
+        this.spend(worker, SIM.worker.moveStaminaPerTile * this.day.staminaMult);
       }
       if (leg.y > this.maxDepth) {
         this.maxDepth = leg.y;
@@ -357,7 +361,10 @@ export class RunSim {
     if (!worker.hitDone && worker.swingTimer >= period * SIM.worker.impactPoint) {
       worker.hitDone = true;
       tile.hp -= this.loadout.pickaxeDamage;
-      this.spend(worker, SIM.tiles[tile.type].staminaPerHit * this.layerMult(target.y));
+      this.spend(
+        worker,
+        SIM.tiles[tile.type].staminaPerHit * this.layerMult(target.y) * this.day.staminaMult,
+      );
       const broken = tile.hp <= 0;
       this.emit({
         kind: 'hit',
@@ -397,6 +404,7 @@ export class RunSim {
   }
 
   private rollLoot(type: TileType): LootDrop[] {
+    const rich = this.day.richLootChance;
     const drops: LootDrop[] = [];
     if (type === 'dirt') {
       if (this.rng() < 0.3) drops.push({ resource: 'stone', amount: 1 });
@@ -404,13 +412,13 @@ export class RunSim {
       drops.push({ resource: 'stone', amount: 1 });
     } else if (type === 'copper') {
       drops.push({ resource: 'stone', amount: 1 });
-      drops.push({ resource: 'copper', amount: this.rng() < 0.45 ? 2 : 1 });
+      drops.push({ resource: 'copper', amount: this.rng() < 0.45 * rich ? 2 : 1 });
     } else if (type === 'hardstone') {
       drops.push({ resource: 'stone', amount: 1 });
-      if (this.rng() < 0.3) drops.push({ resource: 'iron', amount: 1 });
+      if (this.rng() < 0.3 * rich) drops.push({ resource: 'iron', amount: 1 });
     } else {
       drops.push({ resource: 'stone', amount: 1 });
-      drops.push({ resource: 'iron', amount: this.rng() < 0.45 ? 2 : 1 });
+      drops.push({ resource: 'iron', amount: this.rng() < 0.45 * rich ? 2 : 1 });
     }
     return drops;
   }
@@ -515,7 +523,10 @@ export class RunSim {
         // willing to chew through them.
         const effectiveHits = Math.ceil(def.hits / this.loadout.pickaxeDamage);
         const staminaCost =
-          effectiveHits * def.staminaPerHit * this.layerMult(candidate.target.y);
+          effectiveHits *
+          def.staminaPerHit *
+          this.layerMult(candidate.target.y) *
+          this.day.staminaMult;
         const score =
           def.value * profile.valueWeight +
           candidate.target.y * profile.depthWeight -

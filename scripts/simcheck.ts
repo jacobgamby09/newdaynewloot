@@ -6,6 +6,7 @@
  * Run with: npx tsx scripts/simcheck.ts
  */
 import { SIM } from '../src/sim/config';
+import { DAY_MODIFIERS, NEUTRAL_DAY, type DayModifier } from '../src/sim/days';
 import { RunSim } from '../src/sim/run';
 import { deriveLoadout, type Loadout, type UpgradeLevels } from '../src/sim/upgrades';
 import { RUN_INTENTS, type LootTotals, type RunIntent, type SimEvent } from '../src/sim/types';
@@ -38,10 +39,15 @@ const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const min = (xs: number[]) => Math.min(...xs);
 const max = (xs: number[]) => Math.max(...xs);
 
-function simulate(loadout: Loadout, intent: RunIntent, label: string): RunResult[] {
+function simulate(
+  loadout: Loadout,
+  intent: RunIntent,
+  label: string,
+  day: DayModifier = NEUTRAL_DAY,
+): RunResult[] {
   const results: RunResult[] = [];
   for (let i = 0; i < RUNS; i++) {
-    const sim = new RunSim(1000 + i * 7919, loadout, intent);
+    const sim = new RunSim(1000 + i * 7919, loadout, intent, day);
     let t = 0;
     let depth = loadout.startRow;
     let tilesBroken = 0;
@@ -99,6 +105,12 @@ const earlyLoadout = deriveLoadout({
 });
 for (const intent of RUN_INTENTS) {
   report(`intent: ${intent}`, simulate(earlyLoadout, intent, `intent ${intent}`));
+}
+
+console.log('\n#### Day modifiers (early loadout, balanced intent) ####');
+report('neutral (no modifier)', simulate(earlyLoadout, 'balanced', 'day neutral'));
+for (const mod of Object.values(DAY_MODIFIERS)) {
+  report(`day: ${mod.name}`, simulate(earlyLoadout, 'balanced', `day ${mod.key}`, mod));
 }
 
 console.log('\n#### Bomb sanity ####');

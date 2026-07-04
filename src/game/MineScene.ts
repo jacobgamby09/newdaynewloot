@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { SIM } from '../sim/config';
+import { modifierForDay } from '../sim/days';
 import { RunSim } from '../sim/run';
 import { campLevel, deriveLoadout } from '../sim/upgrades';
 import type { Cell, LootDrop, SimEvent, TileType } from '../sim/types';
@@ -240,8 +241,11 @@ export class MineScene extends Phaser.Scene {
     this.workerVisuals.clear();
     this.reticle.setVisible(false);
 
-    const { upgrades, intent } = useGameStore.getState();
-    this.sim = new RunSim(seed, deriveLoadout(upgrades), intent);
+    const { upgrades, intent, runCount } = useGameStore.getState();
+    // During a run the current day equals runCount (startRun already advanced
+    // it); the idle preview shows the upcoming day instead.
+    const day = autoStart ? runCount : runCount + 1;
+    this.sim = new RunSim(seed, deriveLoadout(upgrades), intent, modifierForDay(day));
 
     this.tileSprites = [];
     this.crackSprites = [];

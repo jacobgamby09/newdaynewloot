@@ -1,4 +1,5 @@
 import { SIM } from '../sim/config';
+import { modifierForDay } from '../sim/days';
 import { deriveLoadout } from '../sim/upgrades';
 import type { ResourceType } from '../sim/types';
 import { useGameStore } from '../state/store';
@@ -95,8 +96,11 @@ export function HUD() {
   const workers = useGameStore((s) => s.workers);
   const depth = useGameStore((s) => s.depth);
   const intent = useGameStore((s) => s.intent);
+  const runCount = useGameStore((s) => s.runCount);
 
   if (phase === 'idle') return null;
+
+  const dayMod = modifierForDay(runCount);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 text-white">
@@ -119,6 +123,9 @@ export function HUD() {
       </div>
 
       <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+        <span className="rounded bg-black/40 px-2 py-1 text-xs font-medium text-amber-200/90">
+          Day {runCount} · {dayMod.icon} {dayMod.name}
+        </span>
         <span className="rounded bg-black/40 px-2 py-1 text-xs font-medium text-white/80">
           Depth {depth} m
         </span>

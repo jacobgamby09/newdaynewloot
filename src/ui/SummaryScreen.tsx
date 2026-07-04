@@ -44,6 +44,8 @@ export function SummaryScreen() {
     return isUpgradeUnlocked(kind, upgrades) && cost !== null && canAfford(totals, cost);
   });
 
+  const runCount = useGameStore((s) => s.runCount);
+
   const again = () => {
     sfx.unlock();
     useGameStore.getState().startRun();
@@ -52,9 +54,11 @@ export function SummaryScreen() {
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
       <div className="w-80 rounded-2xl bg-[#1d1712] p-6 shadow-2xl ring-1 ring-white/10">
-        <h2 className="text-center text-xl font-extrabold text-amber-300">Run Complete</h2>
+        <h2 className="text-center text-xl font-extrabold text-amber-300">
+          Day {runCount} Complete
+        </h2>
         <p className="mt-1 text-center text-xs text-white/50">
-          Your miner is exhausted · reached {depth} m
+          The crew is exhausted · reached {depth} m
         </p>
         <div className="mt-4 flex flex-col gap-2">
           {RESOURCES.map((r, i) => (

@@ -11,6 +11,7 @@ import {
   type UpgradeKind,
 } from '../sim/upgrades';
 import { useState } from 'react';
+import { modifierForDay } from '../sim/days';
 import { useGameStore } from '../state/store';
 import { RESOURCE_LABELS, ResourceIcon } from './icons';
 import { INTENT_INFO } from './intents';
@@ -187,7 +188,9 @@ export function CampScreen() {
           )}
         </div>
 
-        <div className="mt-4">
+        <DayNotice day={runCount + 1} />
+
+        <div className="mt-3">
           <div className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/50 uppercase">
             Camp storage
           </div>
@@ -235,6 +238,26 @@ export function CampScreen() {
 
         <ResetSaveButton />
       </div>
+    </div>
+  );
+}
+
+function DayNotice({ day }: { day: number }) {
+  const mod = modifierForDay(day);
+  return (
+    <div className="mt-3 rounded-xl bg-amber-500/10 px-3 py-2.5 ring-1 ring-amber-300/20">
+      <div className="flex items-center gap-2.5">
+        <span className="text-2xl">{mod.icon}</span>
+        <div>
+          <div className="text-[11px] font-semibold tracking-wide text-amber-300/70 uppercase">
+            Day {day} · Today's notice
+          </div>
+          <div className="text-sm font-bold text-white">{mod.name}</div>
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-white/60">
+        {mod.blurb} <span className="font-semibold text-amber-200/90">{mod.tip}</span>
+      </p>
     </div>
   );
 }
