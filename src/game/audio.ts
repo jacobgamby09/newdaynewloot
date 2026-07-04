@@ -87,6 +87,13 @@ class Sfx {
     this.noise(200, 0.09, 0.14, 'lowpass');
   }
 
+  build() {
+    // two quick hammer knocks
+    this.noise(1100, 0.05, 0.16, 'bandpass');
+    setTimeout(() => this.noise(900, 0.06, 0.16, 'bandpass'), 110);
+    setTimeout(() => this.tone(520, 720, 0.12, 0.06, 'sine'), 230);
+  }
+
   fuse() {
     this.noise(2400, 0.5, 0.05, 'highpass');
   }

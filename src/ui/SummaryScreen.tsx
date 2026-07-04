@@ -3,7 +3,6 @@ import { RESOURCES, type ResourceType } from '../sim/types';
 import {
   UPGRADE_ORDER,
   canAfford,
-  isUpgradeUnlocked,
   upgradeCost,
 } from '../sim/upgrades';
 import { useGameStore } from '../state/store';
@@ -41,7 +40,7 @@ export function SummaryScreen() {
 
   const upgradeReady = UPGRADE_ORDER.some((kind) => {
     const cost = upgradeCost(kind, upgrades[kind]);
-    return isUpgradeUnlocked(kind, upgrades) && cost !== null && canAfford(totals, cost);
+    return cost !== null && canAfford(totals, cost);
   });
 
   const runCount = useGameStore((s) => s.runCount);

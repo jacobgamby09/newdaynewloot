@@ -15,39 +15,34 @@ Guiding principle, inherited from the GDD: add variation and decisions before
 adding volume. Every phase below should make the pre-run choice or the
 mid-run intervention more interesting, not just make numbers bigger.
 
-## Phase 6 - Living Camp / Townhall
+## Phase 6 - Living Camp (build-first physical buildings) [DONE]
 
-The current upgrade screen works, but it is mostly a functional menu. The
-next progression pass should turn the camp into something the player can see
-growing on the surface above the mine.
+Implemented after one revision. The first attempt (a townhall tent that
+gated upgrade categories by camp level and opened a central upgrade menu)
+felt like a menu hiding behind a sprite; it was replaced with build-first
+physical buildings.
 
-Start small: one tent acts as the Camp Hub / Townhall. It opens the existing
-upgrade interface, shows the current camp level, and gradually unlocks upgrade
-categories and visible building sites. This gives camp growth a physical
-identity before the game needs a full base-building system.
+As implemented:
 
-Implement:
+- The surface strip is the camp: decorative tent + campfire, the idle crew,
+  and one spot per upgrade track.
+- Unbuilt buildings show as staked-out plots; constructing one (its first
+  purchase) makes the building physically appear with a pop, dust and hammer
+  audio. Further purchases upgrade it in place.
+- Clicking a building/plot opens a small focused panel for that building
+  only. No central upgrade menu, no townhall, no camp-level gate —
+  construction costs pace progression.
+- An upgrade-available badge bounces over buildings the player can afford.
+- Idle camera frames the whole camp strip; day notice, intent picker and
+  Start Run live in a compact bottom bar.
 
-- A small tent / Camp Hub visible on the grass above the mine during idle.
-- Camp Hub level as a new progression track.
-- Visual tent upgrades for Camp Hub levels.
-- Upgrade gating by Camp Hub level (as implemented):
-  - Level 1: basic tent, start run, storage, Blacksmith (tools) and Bunkhouse (stamina).
-  - Level 2: Elevator — start deeper in a pre-dug shaft.
-  - Level 3: Notice Board — crew progression.
-  - Level 4: Bomb Satchel — ability progression.
-  - Level 5: reserved for advanced mine infrastructure (outpost tier).
-- Camp UI opened from the Camp Hub instead of feeling like a detached menu.
-- Small construction payoff on upgrade: sound, quick pop, level badge, or dust.
+Success criteria (met):
 
-Success criteria:
-
-- The first screen reads as "my camp above my mine", not only a menu overlay.
-- Upgrades feel tied to physical places in the camp.
+- The first screen reads as "my camp above my mine", not a menu overlay.
+- Upgrades are tied to physical places in the camp.
 - The player can tell at a glance that the camp has improved over time.
-- The system keeps the early game simple and readable.
 
-Do not implement yet:
+Still not implemented (by design):
 
 - Full base-building placement.
 - Prestige / moving to a new mine.

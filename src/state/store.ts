@@ -4,7 +4,6 @@ import {
   DEFAULT_LEVELS,
   canAfford,
   deriveLoadout,
-  isUpgradeUnlocked,
   upgradeCost,
   type UpgradeKind,
   type UpgradeLevels,
@@ -56,13 +55,13 @@ interface GameStore {
   bombsLeft: number;
   /** True while the player is aiming a bomb (targeting mode). */
   arming: boolean;
-  /** True while the camp hub upgrade window is open (opened by clicking the tent). */
-  campOpen: boolean;
+  /** Building whose popover is open (clicked in the camp), or null. */
+  selectedBuilding: UpgradeKind | null;
   /** Sound effects muted (persisted). */
   muted: boolean;
   setIntent: (intent: RunIntent) => void;
   setArming: (arming: boolean) => void;
-  setCampOpen: (open: boolean) => void;
+  setSelectedBuilding: (kind: UpgradeKind | null) => void;
   toggleMuted: () => void;
   /** Wipes all progress back to a fresh save (for playtests). */
   resetSave: () => void;
@@ -93,14 +92,14 @@ export const useGameStore = create<GameStore>()(
       endReason: 'exhausted',
       bombsLeft: 0,
       arming: false,
-      campOpen: false,
+      selectedBuilding: null,
       muted: false,
 
       setIntent: (intent) => set({ intent }),
 
       setArming: (arming) => set({ arming }),
 
-      setCampOpen: (open) => set({ campOpen: open }),
+      setSelectedBuilding: (kind) => set({ selectedBuilding: kind }),
 
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
 
@@ -142,7 +141,7 @@ export const useGameStore = create<GameStore>()(
             runLoot: emptyLoot(),
             bombsLeft: loadout.bombCharges,
             arming: false,
-            campOpen: false,
+            selectedBuilding: null,
           };
         }),
 
@@ -159,13 +158,10 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      // The summary's "Camp" button returns to the camp and opens the hub
-      // directly, since its intent is to manage upgrades.
-      goIdle: () => set({ phase: 'idle', campOpen: true }),
+      goIdle: () => set({ phase: 'idle' }),
 
       buyUpgrade: (kind) => {
         const s = get();
-        if (!isUpgradeUnlocked(kind, s.upgrades)) return;
         const cost = upgradeCost(kind, s.upgrades[kind]);
         if (!cost || !canAfford(s.totals, cost)) return;
         const totals = { ...s.totals };

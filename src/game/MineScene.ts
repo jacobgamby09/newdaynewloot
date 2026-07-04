@@ -2,7 +2,15 @@ import Phaser from 'phaser';
 import { SIM } from '../sim/config';
 import { modifierForDay } from '../sim/days';
 import { RunSim } from '../sim/run';
-import { campLevel, deriveLoadout } from '../sim/upgrades';
+import {
+  UPGRADES,
+  UPGRADE_ORDER,
+  canAfford,
+  deriveLoadout,
+  isBuilt,
+  upgradeCost,
+  type UpgradeKind,
+} from '../sim/upgrades';
 import type { Cell, LootDrop, SimEvent, TileType } from '../sim/types';
 import { useGameStore } from '../state/store';
 import { flyLootIcon } from '../ui/lootFly';
@@ -31,6 +39,30 @@ interface WorkerVisual {
   done: boolean;
 }
 
+interface BuildingVisual {
+  container: Phaser.GameObjects.Container;
+  sprite: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  badge: Phaser.GameObjects.Text;
+}
+
+/** Fixed spots along the grass strip; the elevator frame sits over the shaft. */
+const BUILDING_SPOTS: { kind: UpgradeKind; x: number }[] = [
+  { kind: 'blacksmith', x: TILE * 1.3 },
+  { kind: 'bunkhouse', x: TILE * 3.6 },
+  { kind: 'elevator', x: TILE * 6.5 },
+  { kind: 'crew', x: TILE * 9.1 },
+  { kind: 'satchel', x: TILE * 11.0 },
+];
+
+const BUILDING_TEXTURE: Record<UpgradeKind, string> = {
+  blacksmith: 'bld-blacksmith',
+  bunkhouse: 'bld-bunkhouse',
+  elevator: 'bld-elevator',
+  crew: 'bld-board',
+  satchel: 'bld-workshop',
+};
+
 export class MineScene extends Phaser.Scene {
   private sim: RunSim | null = null;
   private running = false;
@@ -41,11 +73,7 @@ export class MineScene extends Phaser.Scene {
   private followPoint!: Phaser.GameObjects.Rectangle;
   private reticle!: Phaser.GameObjects.Graphics;
   private bombSprites = new Map<string, Phaser.GameObjects.Container>();
-  private campHub?: {
-    container: Phaser.GameObjects.Container;
-    sprite: Phaser.GameObjects.Image;
-    label: Phaser.GameObjects.Text;
-  };
+  private buildings = new Map<UpgradeKind, BuildingVisual>();
   private unsub?: () => void;
 
   constructor() {
@@ -87,7 +115,7 @@ export class MineScene extends Phaser.Scene {
     bg.fillStyle(0x3e8f2f, 1);
     bg.fillRect(-margin, SKY_ROWS * TILE - 2, worldW + margin * 2, 2);
 
-    this.createCampHub();
+    this.createCamp();
 
     // invisible camera focus that tracks the deepest active worker
     this.followPoint = this.add.rectangle(wx(SIM.grid.startX), wy(0), 2, 2, 0x000000, 0);
@@ -107,13 +135,18 @@ export class MineScene extends Phaser.Scene {
       if (state.phase === 'running' && prev.phase !== 'running') {
         this.beginRun(state.seed);
       }
-      // Returning to the camp (e.g. from the summary): re-frame on the tent.
+      // Returning to the camp (e.g. from the summary): re-frame on it.
       if (state.phase === 'idle' && prev.phase !== 'idle') {
         this.running = false;
         this.focusCamp();
       }
-      if (campLevel(state.upgrades) !== campLevel(prev.upgrades)) {
-        this.updateCampHub(true);
+      if (state.upgrades !== prev.upgrades) {
+        for (const kind of UPGRADE_ORDER) {
+          if (state.upgrades[kind] !== prev.upgrades[kind]) this.celebrateBuilding(kind);
+        }
+      }
+      if (state.upgrades !== prev.upgrades || state.totals !== prev.totals) {
+        this.refreshCamp();
       }
       if (!state.arming && prev.arming) this.reticle.setVisible(false);
     });
@@ -135,9 +168,8 @@ export class MineScene extends Phaser.Scene {
 
   private applyZoom() {
     const base = Phaser.Math.Clamp(this.scale.width / 420, 2, 3);
-    // Idle camp view sits a touch closer so the tent dominates and less of
-    // the mine is visible.
-    this.cameras.main.setZoom(this.running ? base : base * 1.35);
+    // Idle pulls back slightly so the whole camp strip fits comfortably.
+    this.cameras.main.setZoom(this.running ? base : Math.max(1.6, base * 0.9));
   }
 
   private onResize() {
@@ -145,74 +177,115 @@ export class MineScene extends Phaser.Scene {
     else this.focusCamp();
   }
 
-  private createCampHub() {
-    const level = Phaser.Math.Clamp(campLevel(useGameStore.getState().upgrades), 1, 5);
-    const sign = this.add.graphics();
-    sign.fillStyle(0x3b2418, 1);
-    sign.fillRoundedRect(-18, -49, 36, 16, 2);
-    sign.lineStyle(1, 0xffd94d, 0.9);
-    sign.strokeRoundedRect(-18, -49, 36, 16, 2);
-    const label = this.add
-      .text(0, -41, `Lv ${level}`, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '9px',
-        fontStyle: '700',
-        color: '#ffd94d',
-      })
-      .setOrigin(0.5);
-    const sprite = this.add.image(0, 0, `camp-hub-${level}`).setOrigin(0.5, 1);
-    // Centered horizontally over the mine board.
-    const centerX = (SIM.grid.width * TILE) / 2;
-    const container = this.add
-      .container(centerX, SKY_ROWS * TILE - 2, [sprite, sign, label])
-      .setDepth(7);
-    this.campHub = { container, sprite, label };
+  /** Physical camp: decor plus one building or staked plot per upgrade track. */
+  private createCamp() {
+    const groundY = SKY_ROWS * TILE - 2;
 
-    // Click the tent to open the camp hub (only while idle in the camp).
-    sprite.setInteractive({ useHandCursor: true });
-    sprite.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
-      if (useGameStore.getState().phase === 'idle') {
-        useGameStore.getState().setCampOpen(true);
-      }
-    });
-    // Gentle idle bob so the tent reads as interactive.
+    // decorative tent + campfire at the edge of camp
+    this.add.image(-TILE * 1.8, groundY, 'decor-tent').setOrigin(0.5, 1).setDepth(6);
+    this.add.image(-TILE * 0.4, groundY, 'decor-logs').setOrigin(0.5, 1).setDepth(6);
+    const flame = this.add
+      .image(-TILE * 0.4 - 1, groundY - 14, 'decor-flame')
+      .setOrigin(0.5, 1)
+      .setDepth(7);
     this.tweens.add({
-      targets: sprite,
-      y: -3,
-      duration: 1400,
+      targets: flame,
+      scaleX: 0.8,
+      scaleY: 1.18,
+      alpha: 0.85,
+      duration: 260,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
+
+    for (const spot of BUILDING_SPOTS) {
+      const sprite = this.add.image(0, 0, BUILDING_TEXTURE[spot.kind]).setOrigin(0.5, 1);
+      const label = this.add
+        .text(0, 4, UPGRADES[spot.kind].name, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '8px',
+          fontStyle: '700',
+          color: '#f2ead8',
+        })
+        .setOrigin(0.5, 0)
+        .setAlpha(0.85);
+      const badge = this.add
+        .text(0, -54, '⬆', {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '13px',
+          fontStyle: '900',
+          color: '#ffd94d',
+        })
+        .setOrigin(0.5, 1)
+        .setVisible(false);
+      this.tweens.add({
+        targets: badge,
+        y: -58,
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      const container = this.add
+        .container(spot.x, groundY, [sprite, label, badge])
+        .setDepth(7);
+      // Fixed hit area in container-local space so clicks work identically
+      // for the small plot texture and the larger building texture.
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-29, -56, 58, 62),
+        Phaser.Geom.Rectangle.Contains,
+      );
+      if (container.input) container.input.cursor = 'pointer';
+      container.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+        if (useGameStore.getState().phase === 'idle') {
+          useGameStore.getState().setSelectedBuilding(spot.kind);
+        }
+      });
+      this.buildings.set(spot.kind, { container, sprite, label, badge });
+    }
+    this.refreshCamp();
   }
 
-  /** Frame the surface camp (tent + sky) with only a sliver of mine below. */
+  /** Sync building sprites, labels and affordability badges with the store. */
+  private refreshCamp() {
+    const { upgrades, totals } = useGameStore.getState();
+    for (const [kind, visual] of this.buildings) {
+      const built = isBuilt(kind, upgrades);
+      visual.sprite.setTexture(built ? BUILDING_TEXTURE[kind] : 'plot');
+      visual.label.setText(
+        built ? `${UPGRADES[kind].name} Lv ${upgrades[kind] - 1}` : UPGRADES[kind].name,
+      );
+      visual.label.setAlpha(built ? 0.95 : 0.6);
+      const cost = upgradeCost(kind, upgrades[kind]);
+      visual.badge.setVisible(cost !== null && canAfford(totals, cost));
+    }
+  }
+
+  /** Construction/upgrade payoff: pop, dust and hammer knocks. */
+  private celebrateBuilding(kind: UpgradeKind) {
+    const visual = this.buildings.get(kind);
+    if (!visual) return;
+    this.tweens.killTweensOf(visual.container);
+    visual.container.setScale(1);
+    this.tweens.add({
+      targets: visual.container,
+      scaleX: 1.14,
+      scaleY: 1.14,
+      duration: 140,
+      yoyo: true,
+      ease: 'Back.easeOut',
+    });
+    this.spawnSurfaceDust(visual.container.x, visual.container.y - 14);
+    sfx.build();
+  }
+
+  /** Frame the surface camp with the mine only peeking in at the bottom. */
   private focusCamp() {
     const cam = this.cameras.main;
     cam.stopFollow();
     this.applyZoom();
-    const x = this.campHub?.container.x ?? (SIM.grid.width * TILE) / 2;
-    // Center high so the sky and tent dominate; bounds clamp the top to 0.
-    cam.centerOn(x, SKY_ROWS * TILE - TILE * 1.5);
-  }
-
-  private updateCampHub(celebrate = false) {
-    if (!this.campHub) return;
-    const level = Phaser.Math.Clamp(campLevel(useGameStore.getState().upgrades), 1, 5);
-    this.campHub.sprite.setTexture(`camp-hub-${level}`);
-    this.campHub.label.setText(`Lv ${level}`);
-    if (!celebrate) return;
-    this.tweens.killTweensOf(this.campHub.container);
-    this.campHub.container.setScale(1);
-    this.tweens.add({
-      targets: this.campHub.container,
-      scaleX: 1.12,
-      scaleY: 1.12,
-      duration: 130,
-      yoyo: true,
-      ease: 'Back.easeOut',
-    });
-    this.spawnSurfaceDust(this.campHub.container.x, this.campHub.container.y - 12);
+    cam.centerOn((SIM.grid.width * TILE) / 2, SKY_ROWS * TILE - TILE * 1.5);
   }
 
   private spawnSurfaceDust(x: number, y: number) {
@@ -267,6 +340,11 @@ export class MineScene extends Phaser.Scene {
       const container = this.add
         .container(wx(worker.pos.x), wy(worker.pos.y), [body, pickaxe])
         .setDepth(10);
+      if (!autoStart) {
+        // Idle: the crew hangs out by the campfire instead of down the shaft.
+        container.setPosition(-TILE * 0.4 + 18 + worker.id * 16, SKY_ROWS * TILE - 14);
+        container.setScale(worker.id % 2 === 0 ? -1 : 1, 1);
+      }
       this.workerVisuals.set(worker.id, {
         container,
         body,

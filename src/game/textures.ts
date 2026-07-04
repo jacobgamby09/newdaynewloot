@@ -245,83 +245,236 @@ function genBomb(g: Phaser.GameObjects.Graphics) {
   g.generateTexture('spark', 4, 4);
 }
 
-function genCampHub(g: Phaser.GameObjects.Graphics, level: number) {
-  const w = 96;
-  const h = 56;
+// ---------------------------------------------------------------------------
+// Camp buildings. Shared palette so the camp reads as one place.
+const WOOD = 0x8a5a33;
+const WOOD_DARK = 0x5f3c1f;
+const WOOD_LIGHT = 0xa9713f;
+const OUTLINE = 0x332214;
+const ROOF = 0xb5502e;
+const ROOF_DARK = 0x83371e;
+const STONE_WALL = 0x7e8795;
+const STONE_WALL_DARK = 0x5b636f;
+
+function groundShadow(g: Phaser.GameObjects.Graphics, w: number, h: number, spread = 0.85) {
+  g.fillStyle(0x1e2f1a, 0.35);
+  g.fillEllipse(w / 2, h - 2.5, w * spread, 6);
+}
+
+function genBlacksmith(g: Phaser.GameObjects.Graphics) {
+  const w = 52;
+  const h = 40;
   g.clear();
+  groundShadow(g, w, h);
+  // stone walls
+  g.fillStyle(STONE_WALL, 1);
+  g.fillRect(4, 16, 44, 21);
+  g.fillStyle(STONE_WALL_DARK, 1);
+  g.fillRect(4, 16, 44, 3);
+  for (const [bx, by] of [[8, 24], [18, 30], [30, 22], [38, 29]] as const) {
+    g.fillRect(bx, by, 6, 3);
+  }
+  // open forge front
+  g.fillStyle(0x2a1c12, 1);
+  g.fillRect(9, 22, 14, 15);
+  // forge glow + anvil
+  g.fillStyle(0xff8c26, 0.95);
+  g.fillRect(11, 30, 10, 6);
+  g.fillStyle(0xffd94d, 0.9);
+  g.fillRect(13, 32, 6, 3);
+  g.fillStyle(0x3a3f49, 1);
+  g.fillRect(28, 30, 10, 3);
+  g.fillRect(31, 33, 4, 4);
+  // slanted plank roof
+  g.fillStyle(ROOF_DARK, 1);
+  g.fillRect(0, 10, 52, 8);
+  g.fillStyle(ROOF, 1);
+  g.fillRect(0, 10, 52, 4);
+  // chimney with embers
+  g.fillStyle(STONE_WALL_DARK, 1);
+  g.fillRect(38, 0, 8, 12);
+  g.fillStyle(0xff8c26, 0.8);
+  g.fillRect(40, 0, 4, 2);
+  g.lineStyle(1, OUTLINE, 1);
+  g.strokeRect(4.5, 16.5, 43, 20);
+  g.strokeRect(38.5, 0.5, 7, 11);
+  g.generateTexture('bld-blacksmith', w, h);
+}
 
-  // ground shadow
-  g.fillStyle(0x23351f, 0.35);
-  g.fillEllipse(w / 2, h - 5, 82, 10);
+function genBunkhouse(g: Phaser.GameObjects.Graphics) {
+  const w = 52;
+  const h = 42;
+  g.clear();
+  groundShadow(g, w, h);
+  // log walls
+  g.fillStyle(WOOD, 1);
+  g.fillRect(4, 18, 44, 21);
+  g.fillStyle(WOOD_DARK, 1);
+  for (let y = 21; y < 39; y += 5) g.fillRect(4, y, 44, 1.5);
+  // gable roof
+  g.fillStyle(ROOF, 1);
+  g.fillTriangle(0, 20, 26, 2, 52, 20);
+  g.fillStyle(ROOF_DARK, 1);
+  g.fillTriangle(26, 2, 52, 20, 40, 20);
+  // door + lit window
+  g.fillStyle(0x3a2416, 1);
+  g.fillRect(9, 25, 10, 14);
+  g.fillStyle(0xffd94d, 0.95);
+  g.fillRect(30, 25, 10, 8);
+  g.lineStyle(1.5, WOOD_DARK, 1);
+  g.strokeRect(30, 25, 10, 8);
+  g.lineBetween(35, 25, 35, 33);
+  g.lineStyle(1, OUTLINE, 1);
+  g.strokeRect(4.5, 18.5, 43, 20);
+  g.strokeTriangle(0, 20, 26, 2, 52, 20);
+  g.generateTexture('bld-bunkhouse', w, h);
+}
 
-  // tent body
-  const tent = level >= 4 ? 0xd6b67a : 0xc98748;
-  const tentDark = level >= 4 ? 0x8f7042 : 0x7c4b2b;
-  const trim = level >= 3 ? 0xffd94d : 0x6b2d1f;
-  g.fillStyle(tentDark, 1);
-  g.fillTriangle(12, h - 8, 42, 10, 72, h - 8);
-  g.fillStyle(tent, 1);
-  g.fillTriangle(20, h - 8, 46, 12, 72, h - 8);
+function genNoticeBoard(g: Phaser.GameObjects.Graphics) {
+  const w = 40;
+  const h = 34;
+  g.clear();
+  groundShadow(g, w, h, 0.7);
+  // posts
+  g.fillStyle(WOOD_DARK, 1);
+  g.fillRect(5, 8, 4, 24);
+  g.fillRect(31, 8, 4, 24);
+  // board with little roof
+  g.fillStyle(WOOD, 1);
+  g.fillRect(2, 6, 36, 16);
+  g.fillStyle(WOOD_LIGHT, 1);
+  g.fillRect(4, 8, 32, 12);
+  g.fillStyle(ROOF_DARK, 1);
+  g.fillRect(0, 3, 40, 4);
+  // pinned notes
+  g.fillStyle(0xf2ead8, 1);
+  g.fillRect(7, 10, 7, 8);
+  g.fillRect(17, 9, 7, 9);
+  g.fillStyle(0xffd94d, 1);
+  g.fillRect(27, 10, 6, 7);
+  g.fillStyle(0xd14b3a, 1);
+  g.fillCircle(10, 11, 1);
+  g.fillCircle(20, 10, 1);
+  g.fillCircle(30, 11, 1);
+  g.lineStyle(1, OUTLINE, 1);
+  g.strokeRect(2.5, 6.5, 35, 15);
+  g.generateTexture('bld-board', w, h);
+}
+
+function genWorkshop(g: Phaser.GameObjects.Graphics) {
+  const w = 48;
+  const h = 38;
+  g.clear();
+  groundShadow(g, w, h);
+  // plank shed
+  g.fillStyle(WOOD, 1);
+  g.fillRect(4, 12, 40, 23);
+  g.fillStyle(WOOD_DARK, 1);
+  for (let x = 10; x < 44; x += 7) g.fillRect(x, 12, 1.5, 23);
+  // flat tilted roof
+  g.fillStyle(ROOF_DARK, 1);
+  g.fillTriangle(0, 14, 0, 8, 48, 4);
+  g.fillRect(0, 12, 48, 3);
+  // door
+  g.fillStyle(0x3a2416, 1);
+  g.fillRect(30, 21, 10, 14);
+  // bomb sign
+  g.fillStyle(0xf2ead8, 1);
+  g.fillCircle(15, 23, 7);
+  g.fillStyle(0x23262e, 1);
+  g.fillCircle(15, 24, 4);
+  g.lineStyle(1.5, 0xc9a15a, 1);
+  g.lineBetween(15, 20, 18, 17);
+  g.lineStyle(1, OUTLINE, 1);
+  g.strokeRect(4.5, 12.5, 39, 22);
+  g.generateTexture('bld-workshop', w, h);
+}
+
+function genElevatorFrame(g: Phaser.GameObjects.Graphics) {
+  const w = 44;
+  const h = 52;
+  g.clear();
+  groundShadow(g, w, h, 0.75);
+  // A-frame legs
+  g.fillStyle(WOOD_DARK, 1);
+  g.fillTriangle(2, 50, 9, 50, 22, 4);
+  g.fillTriangle(42, 50, 35, 50, 22, 4);
+  // crossbeams
+  g.fillStyle(WOOD, 1);
+  g.fillRect(9, 34, 26, 4);
+  g.fillRect(13, 20, 18, 4);
+  // wheel at the top
+  g.lineStyle(2.5, 0x3a3f49, 1);
+  g.strokeCircle(22, 8, 6);
+  g.lineStyle(1.5, 0x3a3f49, 1);
+  g.lineBetween(16, 8, 28, 8);
+  g.lineBetween(22, 2, 22, 14);
+  // rope down the middle
+  g.lineStyle(1.5, 0xc9a15a, 1);
+  g.lineBetween(22, 14, 22, 46);
+  // bucket
+  g.fillStyle(0x5b636f, 1);
+  g.fillRect(17, 44, 10, 7);
+  g.lineStyle(1, OUTLINE, 1);
+  g.strokeRect(17.5, 44.5, 9, 6);
+  g.generateTexture('bld-elevator', w, h);
+}
+
+/** Staked-out plot for a building that has not been constructed yet. */
+function genPlot(g: Phaser.GameObjects.Graphics) {
+  const w = 44;
+  const h = 26;
+  g.clear();
+  // dirt patch
+  g.fillStyle(0x9d6134, 0.5);
+  g.fillEllipse(w / 2, h - 8, 36, 12);
+  // corner stakes
+  g.fillStyle(WOOD_DARK, 1);
+  for (const [sx, sy] of [[3, 12], [37, 12], [3, 20], [37, 20]] as const) {
+    g.fillRect(sx, sy, 3, 6);
+  }
+  // rope between stakes (dashed)
+  g.lineStyle(1, 0xdec79a, 0.9);
+  for (let x = 7; x < 36; x += 6) {
+    g.lineBetween(x, 13, x + 3, 13);
+    g.lineBetween(x, 21, x + 3, 21);
+  }
+  g.generateTexture('plot', w, h);
+}
+
+function genCampDecor(g: Phaser.GameObjects.Graphics) {
+  // small crisp tent (pure decoration)
+  const w = 36;
+  const h = 28;
+  g.clear();
+  groundShadow(g, w, h, 0.8);
+  g.fillStyle(0xc98748, 1);
+  g.fillTriangle(2, 25, 18, 3, 34, 25);
+  g.fillStyle(0x9c6134, 1);
+  g.fillTriangle(18, 3, 34, 25, 24, 25);
   g.fillStyle(0x3b2418, 1);
-  g.fillTriangle(40, h - 8, 50, 31, 61, h - 8);
-  g.lineStyle(2, trim, 1);
-  g.lineBetween(46, 12, 20, h - 8);
-  g.lineBetween(46, 12, 72, h - 8);
+  g.fillTriangle(13, 25, 18, 11, 23, 25);
+  g.lineStyle(1.5, OUTLINE, 1);
+  g.strokeTriangle(2, 25, 18, 3, 34, 25);
+  g.generateTexture('decor-tent', w, h);
 
-  // rope stakes
-  g.lineStyle(1, 0xdec79a, 1);
-  g.lineBetween(20, h - 8, 7, h - 3);
-  g.lineBetween(72, h - 8, 87, h - 3);
-  g.fillStyle(0x66402a, 1);
-  g.fillRect(6, h - 6, 3, 7);
-  g.fillRect(86, h - 6, 3, 7);
+  // campfire logs
+  g.clear();
+  g.fillStyle(WOOD_DARK, 1);
+  g.fillRect(2, 12, 14, 3);
+  g.fillRect(4, 14, 14, 3);
+  g.fillStyle(0x3a3f49, 1);
+  g.fillCircle(6, 14, 1.5);
+  g.fillCircle(14, 15, 1.5);
+  g.generateTexture('decor-logs', 20, 18);
 
-  if (level >= 2) {
-    // crates and workbench
-    g.fillStyle(0x8a5a33, 1);
-    g.fillRect(4, h - 20, 15, 14);
-    g.fillRect(75, h - 18, 14, 12);
-    g.lineStyle(1, 0x5a351f, 1);
-    g.strokeRect(4.5, h - 19.5, 14, 13);
-    g.strokeRect(75.5, h - 17.5, 13, 11);
-  }
-
-  if (level >= 3) {
-    // banner and extra awning
-    g.fillStyle(0x4f7ec9, 1);
-    g.fillRect(51, 7, 3, 19);
-    g.fillStyle(0xffd94d, 1);
-    g.fillTriangle(54, 8, 69, 12, 54, 17);
-    g.fillStyle(0x6b3b28, 1);
-    g.fillRoundedRect(64, h - 24, 22, 18, 2);
-    g.fillStyle(0x9d6134, 1);
-    g.fillRect(65, h - 23, 20, 5);
-  }
-
-  if (level >= 4) {
-    // workshop chimney and forge glow
-    g.fillStyle(0x6f451f, 1);
-    g.fillRect(12, h - 34, 8, 24);
-    g.fillStyle(0x34221a, 1);
-    g.fillRect(10, h - 36, 12, 4);
-    g.fillStyle(0xff8c26, 0.9);
-    g.fillCircle(80, h - 9, 5);
-    g.fillStyle(0xffd94d, 0.9);
-    g.fillCircle(80, h - 9, 2.5);
-  }
-
-  if (level >= 5) {
-    // timber frame roof turns the camp into a tiny outpost
-    g.fillStyle(0x3f2a1d, 1);
-    g.fillRect(24, 13, 45, 4);
-    g.fillRect(24, h - 12, 45, 4);
-    g.fillRect(25, 16, 4, 33);
-    g.fillRect(65, 16, 4, 33);
-    g.lineStyle(2, 0x3f2a1d, 1);
-    g.lineBetween(28, 17, 66, h - 12);
-  }
-
-  g.generateTexture(`camp-hub-${level}`, w, h);
+  // flame (tweened separately)
+  g.clear();
+  g.fillStyle(0xff8c26, 0.95);
+  g.fillTriangle(1, 12, 6, 0, 11, 12);
+  g.fillStyle(0xffd94d, 0.95);
+  g.fillTriangle(3, 12, 6, 4, 9, 12);
+  g.generateTexture('decor-flame', 12, 12);
 }
 
 /** Generates every texture the scene needs. Safe to call more than once. */
@@ -342,6 +495,12 @@ export function ensureTextures(scene: Phaser.Scene) {
   }
   genPickaxe(g);
   genBomb(g);
-  for (let level = 1; level <= 5; level++) genCampHub(g, level);
+  genBlacksmith(g);
+  genBunkhouse(g);
+  genNoticeBoard(g);
+  genWorkshop(g);
+  genElevatorFrame(g);
+  genPlot(g);
+  genCampDecor(g);
   g.destroy();
 }

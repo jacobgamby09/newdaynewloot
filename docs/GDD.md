@@ -29,7 +29,7 @@ The player should not need to micromanage every action. The intended rhythm is:
 
 The camp is the long-term progression surface. It should visually grow as the player unlocks buildings, workers, automation, tools, and deeper mine access.
 
-The first version of this should be a compact Camp Hub / Townhall system rather than a full base builder. The player starts with a small tent on the grass above the mine. That tent is the home base: it opens the upgrade interface, represents the current camp level, and gradually unlocks more upgrade categories and visible building sites.
+The camp is a physical strip of ground above the mine. Every upgrade track is a building that must be constructed first: unbuilt buildings appear as staked-out plots, constructing one makes it physically appear in the camp, and further purchases upgrade that building. Clicking a building (or plot) opens a small focused panel for just that building. There is no separate camp-level or townhall gate — construction costs themselves pace the progression, since later buildings demand resources from deeper layers.
 
 The fantasy is that the player is building a small mining operation from almost nothing. Camp growth should provide visual satisfaction without adding heavy management complexity early.
 
@@ -157,23 +157,23 @@ For the first playable version, Bomb is the strongest candidate because it is ea
 
 The camp is the meta-progression hub and should visually improve over time.
 
-Initial camp structure:
+Initial camp structure (build-first physical buildings):
 
-- Start with a small tent on the surface above the mine.
-- The tent acts as the Camp Hub / Townhall.
-- Upgrading the Camp Hub changes the tent or central camp visually.
-- Higher Camp Hub levels unlock more upgrade categories and building sites.
-- The current upgrade menu can remain simple at first, but it should feel like it belongs to the camp rather than floating outside the world.
+- The surface strip starts almost empty: a decorative tent, a campfire, the idle crew, and one staked-out plot per future building.
+- Constructing a building (paying its build cost) makes it physically appear in the camp and grants its first effect; further purchases upgrade that building in place.
+- Clicking a building or plot opens a small focused panel for that building only — no central upgrade menu.
+- Affordable builds/upgrades are signalled directly on the building in the world.
+- There is no camp-level or townhall gate. Construction costs pace progression: later buildings require resources from deeper layers.
 
-Suggested Camp Hub progression:
+Camp buildings and their build effects:
 
-- Camp Hub Level 1: basic tent, start run, storage, Blacksmith (tool) and Bunkhouse (stamina) upgrades.
-- Camp Hub Level 2: unlock the Elevator, starting runs deeper in a pre-dug shaft.
-- Camp Hub Level 3: unlock the Notice Board and crew progression.
-- Camp Hub Level 4: unlock the Bomb Satchel and ability progression.
-- Camp Hub Level 5: reserved for advanced mine infrastructure (outpost tier).
+- Blacksmith: build grants pickaxe damage 2; upgrades continue the tool line.
+- Bunkhouse: build grants +25 max stamina; upgrades continue.
+- Elevator: build grants a 5 m pre-dug start shaft; upgrades go deeper.
+- Notice Board: build hires the second miner.
+- Workshop: build grants 1 bomb per run; upgrades add charges.
 
-The Camp Hub is not intended to be a prestige reset in the near term. Prestige can later use the idea of packing up and moving to a new mine, but the early game should let the player invest in and grow attached to the first camp.
+The camp is not intended to host a prestige reset in the near term. Prestige can later use the idea of packing up and moving to a new mine, but the early game should let the player invest in and grow attached to the first camp.
 
 Core buildings:
 

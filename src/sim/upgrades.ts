@@ -1,9 +1,9 @@
 import type { LootTotals } from './types';
 
-export type UpgradeKind = 'townhall' | 'blacksmith' | 'bunkhouse' | 'elevator' | 'satchel' | 'crew';
+export type UpgradeKind = 'blacksmith' | 'bunkhouse' | 'elevator' | 'satchel' | 'crew';
 
 export interface UpgradeLevel {
-  /** Cost to reach this level (ignored for the built-in level 1). */
+  /** Cost to reach this level (level 1 is the unbuilt baseline, cost ignored). */
   cost: Partial<LootTotals>;
   /** Meaning depends on the building: damage, max stamina, start depth, etc. */
   value: number;
@@ -14,28 +14,20 @@ export interface UpgradeDef {
   name: string;
   icon: string;
   desc: string;
+  /**
+   * levels[0] is the unbuilt baseline. Reaching level 2 IS constructing the
+   * building (it appears physically in the camp); further levels upgrade it.
+   */
   levels: UpgradeLevel[];
 }
 
 export const UPGRADES: Record<UpgradeKind, UpgradeDef> = {
-  townhall: {
-    name: 'Camp Hub',
-    icon: '⛺',
-    desc: 'Camp level and upgrade access',
-    levels: [
-      { cost: {}, value: 1, label: 'Survey tent' },
-      { cost: { stone: 10, copper: 3 }, value: 2, label: 'Staked camp' },
-      { cost: { stone: 32, copper: 10 }, value: 3, label: 'Crew camp' },
-      { cost: { stone: 58, copper: 18, iron: 4 }, value: 4, label: 'Workshop yard' },
-      { cost: { stone: 95, copper: 30, iron: 12 }, value: 5, label: 'Mining outpost' },
-    ],
-  },
   blacksmith: {
     name: 'Blacksmith',
     icon: '🔨',
     desc: 'Pickaxe damage per swing',
     levels: [
-      { cost: {}, value: 1, label: 'Rusty pickaxe' },
+      { cost: {}, value: 1, label: 'No blacksmith' },
       { cost: { stone: 20, copper: 8 }, value: 2, label: 'Copper-capped pickaxe' },
       { cost: { stone: 40, iron: 12 }, value: 3, label: 'Iron pickaxe' },
     ],
@@ -45,7 +37,7 @@ export const UPGRADES: Record<UpgradeKind, UpgradeDef> = {
     icon: '🛏️',
     desc: 'Worker max stamina',
     levels: [
-      { cost: {}, value: 80, label: 'Bedroll' },
+      { cost: {}, value: 80, label: 'Sleeping rough' },
       { cost: { stone: 12 }, value: 105, label: 'Bunk beds' },
       { cost: { stone: 30, copper: 10 }, value: 130, label: 'Warm meals' },
       { cost: { stone: 55, iron: 10 }, value: 160, label: 'Private rooms' },
@@ -62,11 +54,11 @@ export const UPGRADES: Record<UpgradeKind, UpgradeDef> = {
     ],
   },
   satchel: {
-    name: 'Bomb Satchel',
+    name: 'Workshop',
     icon: '💣',
     desc: 'Bombs per run - blast a 3x3 area',
     levels: [
-      { cost: {}, value: 0, label: 'No satchel' },
+      { cost: {}, value: 0, label: 'No workshop' },
       { cost: { stone: 30, copper: 10 }, value: 1, label: 'Canvas satchel' },
       { cost: { stone: 45, iron: 8 }, value: 2, label: 'Reinforced satchel' },
     ],
@@ -82,11 +74,10 @@ export const UPGRADES: Record<UpgradeKind, UpgradeDef> = {
   },
 };
 
-/** 1-based level per building. */
+/** 1-based level per building. Level 1 = not built yet. */
 export type UpgradeLevels = Record<UpgradeKind, number>;
 
 export const DEFAULT_LEVELS: UpgradeLevels = {
-  townhall: 1,
   blacksmith: 1,
   bunkhouse: 1,
   elevator: 1,
@@ -95,7 +86,6 @@ export const DEFAULT_LEVELS: UpgradeLevels = {
 };
 
 export const UPGRADE_ORDER: UpgradeKind[] = [
-  'townhall',
   'blacksmith',
   'bunkhouse',
   'elevator',
@@ -103,25 +93,9 @@ export const UPGRADE_ORDER: UpgradeKind[] = [
   'satchel',
 ];
 
-export const REQUIRED_CAMP_LEVEL: Record<UpgradeKind, number> = {
-  townhall: 1,
-  blacksmith: 1,
-  bunkhouse: 1,
-  elevator: 2,
-  crew: 3,
-  satchel: 4,
-};
-
-export function campLevel(levels: UpgradeLevels): number {
-  return levels.townhall ?? DEFAULT_LEVELS.townhall;
-}
-
-export function isUpgradeUnlocked(kind: UpgradeKind, levels: UpgradeLevels): boolean {
-  if (kind === 'townhall') return true;
-  // Existing saves may already own advanced categories. Keep those usable even
-  // when the newly-added camp level starts at 1.
-  if ((levels[kind] ?? DEFAULT_LEVELS[kind]) > 1) return true;
-  return campLevel(levels) >= REQUIRED_CAMP_LEVEL[kind];
+/** A building physically exists in the camp once its first level is bought. */
+export function isBuilt(kind: UpgradeKind, levels: UpgradeLevels): boolean {
+  return (levels[kind] ?? 1) >= 2;
 }
 
 /** Everything the run simulation needs to know about the player's camp. */
