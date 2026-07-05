@@ -16,6 +16,7 @@ import { useGameStore } from '../state/store';
 import { flyLootIcon } from '../ui/lootFly';
 import { sfx } from './audio';
 import { ensureTextures, TILE } from './textures';
+import { TILE_ASSET_VARIANTS, tileVariantCount } from './tileAssets';
 
 /** Rows of sky rendered above the mine grid. */
 const SKY_ROWS = 4;
@@ -76,8 +77,34 @@ export class MineScene extends Phaser.Scene {
   private buildings = new Map<UpgradeKind, BuildingVisual>();
   private unsub?: () => void;
 
+  private runSeed = 0;
+
   constructor() {
     super('mine');
+  }
+
+  preload() {
+    // PNG tile art; procedural textures remain as fallback for anything missing.
+    for (const [type, urls] of Object.entries(TILE_ASSET_VARIANTS)) {
+      urls?.forEach((url, i) => {
+        const key = `tile-${type}-${i + 1}`;
+        if (!this.textures.exists(key)) this.load.image(key, url);
+      });
+    }
+  }
+
+  /**
+   * Texture key for a tile cell. Asset-backed types pick a variant
+   * deterministically from (x, y, run seed) so the grid does not repeat the
+   * same tile everywhere yet stays stable for a given mine.
+   */
+  private tileTexture(type: TileType, x: number, y: number): string {
+    const count = tileVariantCount(type);
+    if (count === 0) return `tile-${type}`;
+    let h = (x * 73856093) ^ (y * 19349663) ^ ((this.runSeed | 0) * 83492791);
+    h = (h ^ (h >>> 13)) >>> 0;
+    const key = `tile-${type}-${(h % count) + 1}`;
+    return this.textures.exists(key) ? key : `tile-${type}`;
   }
 
   create() {
@@ -318,6 +345,7 @@ export class MineScene extends Phaser.Scene {
     // During a run the current day equals runCount (startRun already advanced
     // it); the idle preview shows the upcoming day instead.
     const day = autoStart ? runCount : runCount + 1;
+    this.runSeed = seed;
     this.sim = new RunSim(seed, deriveLoadout(upgrades), intent, modifierForDay(day));
 
     this.tileSprites = [];
@@ -327,7 +355,9 @@ export class MineScene extends Phaser.Scene {
       const crackRow: (Phaser.GameObjects.Image | null)[] = [];
       for (let x = 0; x < this.sim.width; x++) {
         const tile = this.sim.grid[y][x];
-        spriteRow.push(tile ? this.add.image(wx(x), wy(y), `tile-${tile.type}`) : null);
+        spriteRow.push(
+          tile ? this.add.image(wx(x), wy(y), this.tileTexture(tile.type, x, y)) : null,
+        );
         crackRow.push(null);
       }
       this.tileSprites.push(spriteRow);
